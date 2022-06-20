@@ -1,12 +1,14 @@
 from tkinter import *
 from tkinter import messagebox
 import random
+import json
 webs=""
 email=""
 password=""
 # ---------------------------- PASSWORD GENERATOR ------------------------------- #
 def passgenerator():
     global password
+    password=""
     characters="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
     CHARACTERS=[x for x in characters]
     NUMBERS=[0,1,2,3,4,5,6,7,8,9]
@@ -25,6 +27,11 @@ def savedetails():
     newpass=""
     webs=input1.get()
     email=input2.get()
+    data = {webs: {
+        "Password": password,
+        "email": email
+    }
+    }
     if password:
         newpass=password
     else:
@@ -35,10 +42,39 @@ def savedetails():
         is_ok = messagebox.askokcancel(title="SAVE CHECK",
                                        message=f"Website:{webs} \nEmail:{email}\nPassword:{newpass}\nIs it ok to save the details")
         if is_ok:
-            with open("data.txt", "a") as f:
-                f.writelines(webs + "|" + email + "|" + newpass + "\n")
-            input1.delete(0, END)
-            input3.delete(0, END)
+            try:
+                with open("data.json", "r") as f:
+                    jdata=json.load(f)
+                    jdata.update(data)
+            except FileNotFoundError:
+                with open("data.json","w") as f:
+                    json.dump(data,f,indent=4)
+            else:
+                with open("data.json", "w") as f:
+                    json.dump(jdata, f, indent=4)
+            finally:
+                input1.delete(0, END)
+                input3.delete(0, END)
+
+def getdetails():
+    inp=input1.get()
+    input2.delete(0,END)
+
+    with open("data.json", "r") as f:
+        jdata = json.load(f)
+        for website in jdata:
+            if inp==website:
+                password=jdata[website]["Password"]
+                email=jdata[website]["email"]
+                messagebox.showinfo(title="Info",message=f"The website email is {email} \n The password used was {password}")
+                inp=None
+        if inp:
+            messagebox.showerror(title="Warning",message=f"The Entered website {inp} does not Exist in database\n ")
+            input1.delete(0,END)
+            input1.focus()
+
+
+
 
 
 # ---------------------------- UI SETUP ------------------------------- #
@@ -70,6 +106,9 @@ button1.grid(row=3,column=2)
 button2=Button(text="Add",font=("arial",10),command=savedetails)
 button2.config(width=38)
 button2.grid(row=4,column=1,columnspan=2)
+button3=Button(text="Search",font=("arial",7),command=getdetails)
+button3.config(width=12)
+button3.grid(row=1,column=2)
 
 
 #------------------------Functions-----------------------------------------------------#
